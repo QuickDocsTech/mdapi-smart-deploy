@@ -1,0 +1,39 @@
+{
+  "name": "mdapi-smart-deploy",
+  "version": "1.0.0",
+  "description": "simplify salesforce metadata api sandbox deploy",
+  "main": "bin/mdapi-smart-deploy.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rynop/mdapi-smart-deploy.git"
+  },
+  "keywords": [
+    "sfdc",
+    "salesforce",
+    "mdapi",
+    "deploy",
+    "sandbox"
+  ],
+  "author": "Ryan Pendergast",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/rynop/mdapi-smart-deploy/issues"
+  },
+  "homepage": "https://github.com/rynop/mdapi-smart-deploy#readme",
+  "engines": {
+    "node": ">=8.10.0"
+  },
+  "bin": {
+    "mdapi-smart-deploy": "bin/mdapi-smart-deploy.js"
+  },
+  "dependencies": {
+    "archiver": "~2.1.1",
+    "easy-zip2": "~2.0.0",
+    "js-yaml": "~3.12.0",
+    "tmp-promise": "~1.0.5",
+    "xml2js": "~0.4.19"
+  }
+}

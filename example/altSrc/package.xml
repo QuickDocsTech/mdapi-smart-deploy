@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <types>
+        <members>Class1</members>
+        <members>Class2</members>        
+        <name>ApexClass</name>
+    </types>
+    <types>        
+        <members>Component1</members>
+        <members>Component2</members>
+        <name>AuraDefinitionBundle</name>
+    </types>
+    <types>
+        <members>Obj1</members>
+        <members>Obj2</members>        
+        <name>CustomObject</name>
+    </types>
+    <types>
+        <members>Obj1-Layout 1</members>
+        <members>Obj1-Layout 2</members>
+        <name>Layout</name>
+    </types>
+    <types>
+        <members>Resource1</members>
+        <members>Resource2</members>
+        <name>StaticResource</name>
+    </types>
+    <version>43.0</version>
+</Package>

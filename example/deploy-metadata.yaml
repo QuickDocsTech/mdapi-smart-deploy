@@ -1,0 +1,15 @@
+ApexClass:
+    - Class1
+    - Class2
+AuraDefinitionBundle:
+    - Component1
+    - Component2
+CustomObject:
+    - Obj1
+    - Obj2
+Layout:
+    - Obj1-Layout 1
+    - Obj2-Layout 1
+StaticResource:
+    - Resource1
+    - Resource2
