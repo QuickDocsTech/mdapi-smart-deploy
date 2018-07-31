@@ -29,4 +29,12 @@ In a [`deploy-metadata.yaml`](./examples/deploy-metadata.yaml) specify what you 
     ```
     npx mdapi-smart-deploy
     ```
-1.  Before promoting changes from your sandbox, remember to modify your `src/package.xml` to include your changes (`--only-gen-package-xml` can help generate the additions you need to make).
+1.  Before promoting changes from your sandbox (to prod for example), remember to modify your `src/package.xml` to include your changes (`--only-gen-package-xml` can help generate the additions you need to make).
+
+### Options
+
+*  `--verbose`: for debugging the tool
+
+## Known issues
+
+Big one is, only a few metadata types are supported today.  See [this issue](https://github.com/rynop/mdapi-smart-deploy/issues/1)
