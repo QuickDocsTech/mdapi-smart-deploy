@@ -6,7 +6,7 @@ const promisify = require('util').promisify,
     xml2js = require('xml2js'),
     xmlBuilder = new xml2js.Builder(),
     tmp = require('tmp-promise'),
-    EasyZip = require('easy-zip2').EasyZip,
+    archiver = require('archiver'),
     fs = require('fs');
 
 const metadataYamlName = 'deploy-metadata.yaml';
@@ -24,7 +24,6 @@ const packageTypeToFolderName = {
     ApexClass: {
         dir: 'classes',
         resourceInOwnSubdir: false,
-        suffixes: ['.cls', '.cls-meta.xml']
     },
     AuraDefinitionBundle: {
         dir: 'aura',
@@ -33,39 +32,29 @@ const packageTypeToFolderName = {
     CustomObject: {
         dir: 'objects',
         resourceInOwnSubdir: false,
-        suffixes: ['.object']
     },
     Layout: {
         dir: 'layouts',
         resourceInOwnSubdir: false,
-        suffixes: ['.layout']
     },
     StaticResource:
     {
         dir: 'staticresources',
         resourceInOwnSubdir: false,
-        suffixes: ['.resource', '.resource-meta.xml']
     },
 };
 
 const commands = {
     deploy(config, zipFilePath) {
-        return `sfdx force:mdapi:deploy -u ${config.username} --zipfile ${zipFilePath} --json`;
+        return `sfdx force:mdapi:deploy -u ${config.sfdxUsername} --zipfile ${zipFilePath} --json`;
     },
     status(config, deployId) {
-        return `sfdx force:mdapi:deploy:report -i ${deployId} -u ${config.username} --json`;
+        return `sfdx force:mdapi:deploy:report -i ${deployId} -u ${config.sfdxUsername} --json`;
     },
-}
-
-function run(...commands) {
-    return Promise.all(commands.map(cmd => exec(cmd)));
-}
-function runSeries(...commands) {
-    return commands.reduce((p, cmd) => p.then(() => exec(cmd)), Promise.resolve());
 }
 
 function getSrcDirPath(cfg) {
-    const sfdcSrcDir = path.join(cwd, cfg.srcDir);
+    const sfdcSrcDir = path.join(cwd, cfg['src-dir']);
     if (!fs.existsSync(sfdcSrcDir)) {
         throw new Error(`Source dir ${sfdcSrcDir} does not exist.  Are you running this cmd from your repo root?`);
     }
@@ -104,59 +93,58 @@ async function generagePackageXML(config) {
 
 async function createZip(config) {
     let tmpZipPath = await tmp.tmpName({ postfix: '.zip' });
+    if ('verbose' in config) {
+        console.log(`zipping to ${tmpZipPath}`);
+    }
 
-    let zip = new EasyZip();
+    let output = fs.createWriteStream(tmpZipPath);
+    let archive = archiver('zip', {
+        zlib: { level: 9 } // Sets the compression level.
+    });
 
-    let files = [];
-    // {
-    //     source: 'easy-zip.js',
-    //     target: 'easy-zip.js'
-    // }, {
-    //     target: 'img'
-    // }, // if source is null, means make a folder
-    // {
-    //     source: 'jszip.js',
-    //     target: 'lib/tmp.js'
-    // }  // ignore missing source files
+    return new Promise((resolve, reject) => {
+        output.on('close', () => resolve(tmpZipPath));
+        output.on('error', (e) => reject(e));
+        output.on('warning', (e) => reject(e));
 
-    //TODO: use https://github.com/archiverjs/node-archiver
+        archive.pipe(output);
 
-    for (let type in config.deployMetadata) {
-        if (!packageTypeToFolderName[type]) {
-            throw new Exception(`type ${type} not supported`);
-        }
-
-        const typeSrcDir = config.srcDirPath + `/${packageTypeToFolderName[type].dir}`;
-
-        if (packageTypeToFolderName[type].resourceInOwnSubdir) {
-            for (let srcFolder in config.deployMetadata[type]) {
-                zip.zipFolder(`${typeSrcDir}/${srcFolder}`, { rootFolder: `${packageTypeToFolderName[type].dir}/${srcFolder}` });
+        for (let type in config.deployMetadata) {
+            if (!packageTypeToFolderName[type]) {
+                throw new Exception(`metadata type ${type} not supported`);
             }
-        } else {
-            for (let filePrefix in config.deployMetadata[type]) {
-                for (let suffix of packageTypeToFolderName[type].suffixes) {
-                    files.push({
-                        source: typeSrcDir + `/${filePrefix}${suffix}`,
-                        target: `${packageTypeToFolderName[type].dir}/${filePrefix}${suffix}`
-                    });
+
+            const typeSrcDir = path.join(config['src-dir'], packageTypeToFolderName[type].dir);
+
+            if (packageTypeToFolderName[type].resourceInOwnSubdir) {
+                for (let srcFolder of config.deployMetadata[type]) {
+                    if ('verbose' in config) {
+                        console.log(`+ DIR ${typeSrcDir}/${srcFolder}/`);
+                    }
+                    archive.directory(`${typeSrcDir}/${srcFolder}/`);
+                }
+            } else {
+                for (let filePrefix of config.deployMetadata[type]) {
+                    if ('verbose' in config) {
+                        console.log(`+ FILES ${typeSrcDir}/${filePrefix}.*`);
+                    }
+                    archive.glob(`${typeSrcDir}/${filePrefix}.*`);
                 }
             }
         }
-    }
 
-    return new Promise((resolve, reject) => {
-        zip.batchAdd(files, { ignore_missing: true }, () => {
-            zip.writeToFile(tmpZipPath);
-            resolve(tmpZipPath);
-        });
+        archive.append(config.packageXml, { name: config['src-dir'] + '/package.xml' });
+        archive.finalize();
     });
 }
 
 (async () => {
     let defaultConfig = {
-        srcDir: 'src',
+        'src-dir': 'src',
         srcDirPath: '',
         deployMetadata: {},
+        packageXml: '',
+        sfdxUsername: process.env.SFDC_SANDBOX_USERNAME
     };
 
     const validCliOpts = [
@@ -182,17 +170,36 @@ async function createZip(config) {
     try {
         config.srcDirPath = getSrcDirPath(config);
         config.deployMetadata = yaml.safeLoad(fs.readFileSync(path.join(cwd, metadataYamlName), 'utf8'));
-        const packageXml = await generagePackageXML(config);
 
         if ('verbose' in config) {
-            console.log('config', config);
+            console.log('config:', config);
         }
 
+        config.packageXml = await generagePackageXML(config);
+
         if ('only-gen-package-xml' in config) {
-            console.log(packageXml);
+            console.log(config.packageXml);
             process.exit(0);
         }
 
+        const zipPath = await createZip(config);
+
+        console.log(`Deploying ${zipPath} under username ${username}`);
+
+        let res = await exec(commands.deploy(config, zipPath));
+        console.log(`Deploy ${res.result.status}`);
+
+        //TODO; replace exec with execFileSync and parse json
+        while (-1 == ['Succeeded', 'Canceled', 'Failed'].indexOf(res.result.status)) {
+            res = await exec(commands.status(config, res.result.id));
+            if ('InProgress' === status) {
+                console.log(`  ${res.result.status}: (${res.result.numberComponentsDeployed}/${res.result.numberComponentsTotal}`);
+            } else {
+                console.log(`Deploy ${res.result.status}`);
+            }
+        }
+
+        console.log(`Deploy ${res.result.status}`);
 
     } catch (e) {
         logAndAbort(e);
