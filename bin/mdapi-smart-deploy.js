@@ -22,8 +22,6 @@ const colors = {
     default: '\x1b[0m'
 }
 
-
-
 const commands = {
     deploy(config, zipFilePath) {
         return `sfdx force:mdapi:deploy -u ${config.sfdxUsername} --zipfile ${zipFilePath} --json`;
@@ -213,26 +211,4 @@ async function doExec(config, cmd) {
     } catch (e) {
         logAndAbort(e);
     }
-
-    // runSeries(
-    //     commands.config(config),
-    //     commands.ssl,
-    //     commands.clean
-    // )
-    //     .then(() => {
-    //         console.log(`
-    // ${colors.green}✔ ${colors.white}Certificate for ${colors.green}*.${config.hostname}.${config.domain} ${colors.white}created successfully!
-    // ${colors.cyan}Press any key ${colors.white}to open Keychain Access, then:
-    //   1. Double click added certificate and expand the "Trust" section
-    //   2. Change to "Always trust" on first dropdown
-    //   3. If your certificate is not there you can drag and drop "ssl.crt" from this folder into Keychain Access
-    // ${colors.cyan}Note! ${colors.white}Make sure the domain is routed to localhost. More info: ${colors.cyan}https://github.com/christianalfoni/create-ssl-certificate
-    // `);
-    //     })
-    //     .then(() => run(
-    //         commands.keychain
-    //     ))
-    //     .then(() => process.exit(0))
-    //     .catch(logAndAbort)
-
 })();
