@@ -1,17 +1,20 @@
 # mdapi-smart-deploy
 
-Salesforce meta-data API smart deploy for sandboxes
+Salesforce meta-data API smart deploy to **sandboxes** (don't use this for production)
 
 ## About
 
-The sfdc [mdapi:deploy](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_mdapi.htm#cli_reference_deploy) requires that you define ALL the code on your filesytem in a `package.xml` file.  
+`mdapi:deploy`requires that all the code on your filesystem at the time of deploy, be defined in `package.xml`.  See details [here](https://salesforce.stackexchange.com/questions/227117/metadata-api-howto-deploy-only-what-specified-in-package-xml).
 
-I want to keep ALL my code in git, and simply define the subset of files I want to delpoy.  `mdapi-smart-deploy` to the rescue...
 
-In [`mdapi.yaml`](./examples/mdapi.yaml) specify what you want to deploy, and `mdapi-smart-deploy` will: 
+I wanted to track all my sfdc in one repo, and be able to only deploy the metadata files that I'm working on at the moment, via the sfdx [mdapi:deploy](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_mdapi.htm#cli_reference_deploy) CLI command.  `mdapi-smart-deploy` to the rescue..
 
-1.  Create a zip file containing a dynamically generated `package.xml`, and ONLY the files referenced in it
-1.  Invokes [mdapi:deploy](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_mdapi.htm#cli_reference_deploy)
+## Overview
+
+In a [`deploy-metadata.yaml`](./examples/deploy-metadata.yaml) specify what you want to deploy, and `mdapi-smart-deploy` will: 
+
+1.  Create a zip file containing a dynamically generated `package.xml`, with only the files you want to deploy.
+1.  Invokes `sfdx force:mdapi:deploy` against your sandbox.
 1.  Checks status of the deploy and reports errors
 
 ## Usage

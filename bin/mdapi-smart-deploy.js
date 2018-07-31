@@ -9,6 +9,8 @@ const promisify = require('util').promisify,
     archiver = require('archiver'),
     fs = require('fs');
 
+const packageTypeToFolderName = require('../lib/packageTypes').packageTypeToFolderName;
+
 const metadataYamlName = 'deploy-metadata.yaml';
 const cwd = process.cwd();
 
@@ -20,29 +22,7 @@ const colors = {
     default: '\x1b[0m'
 }
 
-const packageTypeToFolderName = {
-    ApexClass: {
-        dir: 'classes',
-        resourceInOwnSubdir: false,
-    },
-    AuraDefinitionBundle: {
-        dir: 'aura',
-        resourceInOwnSubdir: true,
-    },
-    CustomObject: {
-        dir: 'objects',
-        resourceInOwnSubdir: false,
-    },
-    Layout: {
-        dir: 'layouts',
-        resourceInOwnSubdir: false,
-    },
-    StaticResource:
-    {
-        dir: 'staticresources',
-        resourceInOwnSubdir: false,
-    },
-};
+
 
 const commands = {
     deploy(config, zipFilePath) {
@@ -111,7 +91,7 @@ async function createZip(config) {
 
         for (let type in config.deployMetadata) {
             if (!packageTypeToFolderName[type]) {
-                throw new Exception(`metadata type ${type} not supported`);
+                throw new Error(`metadata type ${type} not supported`);
             }
 
             const typeSrcDir = path.join(config['src-dir'], packageTypeToFolderName[type].dir);
@@ -136,6 +116,21 @@ async function createZip(config) {
         archive.append(config.packageXml, { name: config['src-dir'] + '/package.xml' });
         archive.finalize();
     });
+}
+
+async function doExec(config, cmd) {
+    try {
+        const { stdout, stderr } = await exec(cmd);
+        if (stderr) {
+            return JSON.parse(stderr);
+        }
+        return JSON.parse(stdout);
+    } catch (error) {
+        if ('verbose' in config) {
+            console.log('caught exec error', error);
+        }
+        return JSON.parse(error.stderr);
+    }
 }
 
 (async () => {
@@ -184,23 +179,37 @@ async function createZip(config) {
 
         const zipPath = await createZip(config);
 
-        console.log(`Deploying ${zipPath} under username ${username}`);
+        console.log(`Deploying ${zipPath} under username ${config.sfdxUsername}`);
 
-        let res = await exec(commands.deploy(config, zipPath));
-        console.log(`Deploy ${res.result.status}`);
+        let res = await doExec(config, commands.deploy(config, zipPath));
+
+        console.log(`=== Deploy ${res.result.status} ===`);
 
         //TODO; replace exec with execFileSync and parse json
         while (-1 == ['Succeeded', 'Canceled', 'Failed'].indexOf(res.result.status)) {
-            res = await exec(commands.status(config, res.result.id));
-            if ('InProgress' === status) {
-                console.log(`  ${res.result.status}: (${res.result.numberComponentsDeployed}/${res.result.numberComponentsTotal}`);
+            res = await doExec(config, commands.status(config, res.result.id));
+            if ('InProgress' === res.result.status) {
+                console.log(`  ${res.result.status}: (${res.result.numberComponentsDeployed}/${res.result.numberComponentsTotal})`);
             } else {
-                console.log(`Deploy ${res.result.status}`);
+                console.log(`=== Deploy ${res.result.status} ===`);
             }
         }
 
-        console.log(`Deploy ${res.result.status}`);
+        if ('Failed' === res.result.status) {
+            if (res.result.details.componentFailures) {
+                let failureDetails = [];
+                if (Array.isArray(res.result.details.componentFailures)) {
+                    failureDetails = res.result.details.componentFailures;
+                }
+                else {
+                    failureDetails.push(res.result.details.componentFailures);
+                }
 
+                for (let failure of failureDetails) {
+                    abort(`${failure.fileName}: Line ${failure.lineNumber}, col ${failure.columnNumber} : ${failure.problem}`);
+                }
+            }
+        }
     } catch (e) {
         logAndAbort(e);
     }
