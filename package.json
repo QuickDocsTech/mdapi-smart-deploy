@@ -1,6 +1,6 @@
 {
   "name": "mdapi-smart-deploy",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "simplify salesforce metadata api sandbox deploy",
   "main": "bin/mdapi-smart-deploy.js",
   "scripts": {
