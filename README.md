@@ -31,8 +31,14 @@ In a [`deploy-metadata.yaml`](./examples/deploy-metadata.yaml) specify what you 
     ```
 1.  Before promoting changes from your sandbox (to prod for example), remember to modify your `src/package.xml` to include your changes (`--only-gen-package-xml` can help generate the additions you need to make).
 
+## Example
+
+Please see the [examples](./examples/deploy-metadata.yaml) directory
+
 ### Options
 
+*  `--src-dir`: specify the directory your metata files (code) lives.  Relative to the root of your git repo.  Defaults to `src`.
+*  `--only-gen-package-xml`: will ONLY generate and print `package.xml` contents to `stdout`.  Will not invoke `mdapi:deploy`
 *  `--verbose`: for debugging the tool
 
 ## Known issues
