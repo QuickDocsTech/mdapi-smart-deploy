@@ -7,7 +7,7 @@ Salesforce meta-data API smart deploy to **sandboxes** (don't use this for produ
 `mdapi:deploy`requires that all the code on your filesystem at the time of deploy, be defined in `package.xml`.  See details [here](https://salesforce.stackexchange.com/questions/227117/metadata-api-howto-deploy-only-what-specified-in-package-xml).
 
 
-I wanted to track all my sfdc in one repo, and be able to only deploy the metadata files that I'm working on at the moment, via the sfdx [mdapi:deploy](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_mdapi.htm#cli_reference_deploy) CLI command.  `mdapi-smart-deploy` to the rescue..
+I wanted to track all my sfdc in one repo, and be able to only deploy the metadata files that I'm working on at the moment, via the sfdx [mdapi:deploy](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_mdapi.htm#cli_reference_deploy) CLI command WITHOUT having to modify XML.  `mdapi-smart-deploy` to the rescue...
 
 ## Overview
 
