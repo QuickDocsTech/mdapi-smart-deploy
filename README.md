@@ -9,6 +9,8 @@ Salesforce meta-data API smart deploy to **sandboxes** (don't use this for produ
 
 I wanted to track all my sfdc in one repo, and be able to only deploy the metadata files that I'm working on at the moment, via the sfdx [mdapi:deploy](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_mdapi.htm#cli_reference_deploy) CLI command WITHOUT having to modify XML.  `mdapi-smart-deploy` to the rescue...
 
+`mdapi-smart-deploy` is IDE/platform agnostic, and leverages the [Salesforce CLI](https://developer.salesforce.com/tools/sfdxcli) so you get lots of stuff for "free" (ex: piggybacks on your alreay configured orgs and login tokens).
+
 ## Overview
 
 In a [`deploy-metadata.yaml`](./examples/deploy-metadata.yaml) specify what you want to deploy, and `mdapi-smart-deploy` will: 
